@@ -1,5 +1,4 @@
 # Specifies base image and tag
-# FROM huggingface/transformers-pytorch-gpu
 FROM us-docker.pkg.dev/vertex-ai/training/pytorch-gpu.2-4.py310:latest
 
 WORKDIR /root

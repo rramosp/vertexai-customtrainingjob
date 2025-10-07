@@ -3,7 +3,13 @@
 
 ## Prepare conatiner
 
-Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin)
+Set default credentials:
+
+      gcloud auth application-default login | Google Cloud SDK
+
+
+Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin). For instance,  a repository named `deeplearning` under GCP Console $\to$ Artifact Registry (_you might look for in on the search bar_) $\to$ Create Repository.
+
 
 Following https://cloud.google.com/vertex-ai/docs/training/create-custom-container 
 
@@ -12,12 +18,11 @@ Following https://cloud.google.com/vertex-ai/docs/training/create-custom-contain
 
         export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
         export REPO_NAME=deeplearning
-        export IMAGE_NAME=hfgemma
+        export IMAGE_NAME=hftrain
         export IMAGE_TAG=v0
         export IMAGE_URI=us-east4-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}
         
         docker build -f Dockerfile -t ${IMAGE_URI} ./
-
 
 ### check by running locally 
 
@@ -25,10 +30,15 @@ Following https://cloud.google.com/vertex-ai/docs/training/create-custom-contain
 
 ### upload image to registry
 
+
         gcloud auth configure-docker us-east4-docker.pkg.dev
+        docker push ${IMAGE_URI}
 
+And check it appears under the repository you created
 
+## Run training job
 
+        python sendjob.py
 
 ## Legacy
 Following https://cloud.google.com/vertex-ai/docs/training/containerize-run-code-local

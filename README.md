@@ -1,20 +1,31 @@
 # Training jobs on Vertex AI
 
+## Files
 
-## Prepare conatiner
+- `Dockerfile`: container definition
+- `finetune-gemma.py`: the training script that gets installed within the container
+- `sendjob.py`: the script that creates and sends the training job to GCP
+
+
+## Prepare stuff 
 
 Set default credentials:
 
-      gcloud auth application-default login | Google Cloud SDK
+      gcloud auth application-default login 
+
+Make sure you have:
+
+- a service account (see `sendjob.py`)
+- IAM role as **Service Account User**
 
 
-Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin). For instance,  a repository named `deeplearning` under GCP Console $\to$ Artifact Registry (_you might look for in on the search bar_) $\to$ Create Repository.
+Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin). For instance,  a repository named `deeplearning` under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository.
 
 
 Following https://cloud.google.com/vertex-ai/docs/training/create-custom-container 
 
 
-### build container
+## build container
 
         export PROJECT_ID=$(gcloud config list project --format "value(core.project)")
         export REPO_NAME=deeplearning
@@ -24,11 +35,11 @@ Following https://cloud.google.com/vertex-ai/docs/training/create-custom-contain
         
         docker build -f Dockerfile -t ${IMAGE_URI} ./
 
-### check by running locally 
+## check by running locally 
 
         docker run --rm --gpus all -e HF_TOKEN=${HF_TOKEN} ${IMAGE_URI}
 
-### upload image to registry
+## upload image to registry
 
 
         gcloud auth configure-docker us-east4-docker.pkg.dev
@@ -38,17 +49,12 @@ And check it appears under the repository you created
 
 ## Run training job
 
-        python sendjob.py
+    python sendjob.py
 
-## Legacy
-Following https://cloud.google.com/vertex-ai/docs/training/containerize-run-code-local
+## Check progress
 
+Under GCP console $\to$ Vertex AI $\to$ Training $\to$ Custom jobs, and the corresponding logs under Cloud Logging
 
-    gcloud ai custom-jobs local-run \
-      --executor-image-uri=huggingface/transformers-pytorch-gpu \
-      --local-package-path=. \
-      --script=finetune-gemma.py \
-      --output-image-uri=gemma_train_demo \
-      --gpu \
-      -- \
-      -- epochs=2
+## Experiments
+
+see [this video](https://www.youtube.com/watch?v=a_YXZ5UltkU) for an introduction on how to track experiments.

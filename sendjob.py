@@ -6,18 +6,12 @@ import numpy as np
 if not 'HF_TOKEN' in os.environ.keys():
     raise ValueError('set your HF_TOKEN environment variable before running')
 
-# Path to your service account key file
-service_account_path = 'service-account.json'
-
-# Create credentials from the service account key file
-#credentials = service_account.Credentials.from_service_account_file(service_account_path)
 
 # initialize
 # EDIT: use your own staging_bucket
 
 experiment_id = np.random.randint(1000):04d
 aiplatform.init(staging_bucket='gs://genai-dev-tmp', 
-#                credentials=credentials, 
                 location='us-east4',
                 experiment = f'experiment-{experiment_id}')
 
@@ -32,7 +26,6 @@ job = aiplatform.CustomJob.from_local_script(
             accelerator_type  = 'NVIDIA_L4',
             accelerator_count = 1,
             environment_variables = {'HF_TOKEN': os.environ['HF_TOKEN']},   
-#            credentials       = credentials
 )
 
 # runjob

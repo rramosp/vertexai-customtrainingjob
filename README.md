@@ -22,7 +22,7 @@ Make sure you have:
 Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin). For instance,  a repository named `deeplearning` under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository.
 
 
-Following https://cloud.google.com/vertex-ai/docs/training/create-custom-container 
+This is a very abridged version of [this tutorial](https://cloud.google.com/vertex-ai/docs/training/create-custom-container)
 
 
 ## build container
@@ -47,14 +47,19 @@ Following https://cloud.google.com/vertex-ai/docs/training/create-custom-contain
 
 And check it appears under the repository you created
 
-## Run training job
+## run training job
 
     python sendjob.py
 
-## Check progress
+## check progress
 
 Under GCP console $\to$ Vertex AI $\to$ Training $\to$ Custom jobs, and the corresponding logs under Cloud Logging
 
-## Experiments
+## experiments
 
 see [this video](https://www.youtube.com/watch?v=a_YXZ5UltkU) for an introduction on how to track experiments.
+
+## comments
+
+- you can pass on parameters to your training job, see [`aiplatform.CustomJob.from_local_script`](https://cloud.google.com/python/docs/reference/aiplatform/latest/google.cloud.aiplatform.CustomJob#google_cloud_aiplatform_CustomJob_from_local_script) using the `args` parameter.
+- you can use what you want in your training script .. for instance, you can configure it to log to wandb.

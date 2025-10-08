@@ -1,4 +1,8 @@
-# Training jobs on Vertex AI
+# Custom training jobs on Vertex AI
+
+This repo shows how to configure and run a training job in VertexAI by creating a custom Docker container and a custom training script within.
+
+This is a very abridged version of [this tutorial](https://cloud.google.com/vertex-ai/docs/training/create-custom-container)
 
 ## Files
 
@@ -19,10 +23,8 @@ Make sure you have:
 - IAM role as **Service Account User**
 
 
-Create first an artifact repository in your project [here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin). For instance,  a repository named `deeplearning` under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository.
+Create first an artifact repository in your project. Here we use an artifact repository named`deeplearning`, whicn you can create under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository. See [example here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin).
 
-
-This is a very abridged version of [this tutorial](https://cloud.google.com/vertex-ai/docs/training/create-custom-container)
 
 
 ## build container

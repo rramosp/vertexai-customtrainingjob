@@ -1,4 +1,4 @@
-<img width="2496" height="1568" alt="image" src="https://github.com/user-attachments/assets/201eaa02-f551-4862-8290-a8a314a96c35" /># Custom training jobs on Vertex AI
+# Custom training jobs on Vertex AI
 
 This repo shows how to configure and run a training job in VertexAI by creating a custom Docker container and a custom training script within.
 

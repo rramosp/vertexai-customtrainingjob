@@ -1,4 +1,4 @@
-# Custom training jobs on Vertex AI
+<img width="2496" height="1568" alt="image" src="https://github.com/user-attachments/assets/201eaa02-f551-4862-8290-a8a314a96c35" /># Custom training jobs on Vertex AI
 
 This repo shows how to configure and run a training job in VertexAI by creating a custom Docker container and a custom training script within.
 
@@ -25,7 +25,9 @@ Make sure you have:
 
 Create first an artifact repository in your project. Here we use an artifact repository named`deeplearning`, whicn you can create under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository. See [example here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin).
 
+Get a token from HuggingFace and store it in the local variable `HF_TOKEN`
 
+        export HF_TOKEN='xxxxxxxx'
 
 ## build container
 

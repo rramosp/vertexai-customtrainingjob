@@ -16,6 +16,11 @@ from peft import LoraConfig
 from trl import SFTConfig
 from trl import SFTTrainer
 
+log_dir = os.environ['AIP_TENSORBOARD_LOG_DIR']
+
+if log_dir.strip()=='':
+    log_dir = "logs"
+
 hf_token = os.environ['HF_TOKEN']
 login(hf_token)
 
@@ -113,6 +118,7 @@ args = SFTConfig(
     gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
     optim="adamw_torch_fused",              # use fused adamw optimizer
+    logging_dir=log_dir,
     logging_steps=10,                       # log every 10 steps
     save_strategy="epoch",                  # save checkpoint every epoch
     learning_rate=2e-4,                     # learning rate, based on QLoRA paper
@@ -121,8 +127,8 @@ args = SFTConfig(
     max_grad_norm=0.3,                      # max gradient norm based on QLoRA paper
     warmup_ratio=0.03,                      # warmup ratio based on QLoRA paper
     lr_scheduler_type="constant",           # use constant learning rate scheduler
-    push_to_hub=False,                       # push model to hub
-    report_to="none",                       # report metrics
+    push_to_hub=False,                      # push model to hub
+    report_to="tensorboard",                # report metrics
     dataset_kwargs={
         "add_special_tokens": False, # We template with special tokens
         "append_concat_token": True, # Add EOS token as separator token between examples

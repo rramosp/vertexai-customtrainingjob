@@ -1,10 +1,17 @@
 # calculadora.py
 import argparse
+import sys
+
+
+print ("** args **", sys.argv)
+
 
 parser = argparse.ArgumentParser(description='llm trainer')
 parser.add_argument('-e', '--epochs', type=int, help='number of epochs', default=1)
 
 args = parser.parse_args()
+
+print ('epochs from args', args.epochs)
 
 
 from huggingface_hub import login

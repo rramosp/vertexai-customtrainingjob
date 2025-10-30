@@ -7,8 +7,6 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Installs additional packages
 RUN pip install trl bitsandbytes peft
 
-# Copies the trainer code to the docker image.
-COPY finetune-gemma.py /root
+# Any script will be renamed as task.py
+ENTRYPOINT ["python", "task.py"]
 
-# Sets up the entry point to invoke the trainer.
-ENTRYPOINT ["python", "finetune-gemma.py"]

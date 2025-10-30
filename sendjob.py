@@ -22,6 +22,7 @@ job_id = np.random.randint(100)
 job = aiplatform.CustomJob.from_local_script(
             display_name      = f'job-{job_id:03d}',
             script_path       = 'finetune-gemma.py',
+            args              = ['--epochs', '2'],
             container_uri     = 'us-east4-docker.pkg.dev/genai-dev-454121/deeplearning/hftrain:v0',
             machine_type      = 'g2-standard-12',
             accelerator_type  = 'NVIDIA_L4',

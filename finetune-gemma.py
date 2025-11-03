@@ -1,19 +1,6 @@
 # calculadora.py
 import argparse
 import sys
-
-
-print ("** args **", sys.argv)
-
-
-parser = argparse.ArgumentParser(description='llm trainer')
-parser.add_argument('-e', '--epochs', type=int, help='number of epochs', default=1)
-
-args = parser.parse_args()
-
-print ('epochs from args', args.epochs)
-
-
 from huggingface_hub import login
 import os
 from datasets import load_dataset
@@ -23,10 +10,76 @@ from peft import LoraConfig
 from trl import SFTConfig
 from trl import SFTTrainer
 
+
+
+def upload_blob_from_json(bucket_name, json_content, destination_blob_name):
+    """Uploads a string to the bucket."""
+
+    from google.cloud import storage
+    import json
+    
+    storage_client = storage.Client()
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    text_content = json.dumps(json_content)
+    blob.upload_from_string(text_content)
+
+
+# ------------ SETUP -----------------
+# ------------------------------------
+
+parser = argparse.ArgumentParser(description='llm trainer')
+parser.add_argument('-e', '--epochs', type=int, help='number of epochs', default=1)
+parser.add_argument('-bs', '--per_device_train_batch_size', type=int, help='per_device_train_batch_size', default=1)
+parser.add_argument('-ga', '--gradient_accumulation_steps', type=int, help='gradient_accumulation_steps', default=2)
+parser.add_argument('-ms', '--max_steps', type=int, help='max_steps', default=-1)
+
+args = parser.parse_args()
+
+job_id         = os.environ['JOB_ID']
+experiment_id  = os.environ['EXPERIMENT_ID']
+run_id         = os.environ['RUN_ID']
+location       = os.environ['LOCATION']
+experiment_metadata_gspath = os.environ['EXPERIMENT_METADATA_GSPATH']
+project_id     = os.environ['GCLOUD_PROJECT_ID']
+
+if experiment_metadata_gspath.startswith('gs://'):
+    experiment_metadata_gspath = experiment_metadata_gspath[5:]
+
+experiment_metadata_bucket = experiment_metadata_gspath.split('/')[0]
+experiment_metadata_path   = '/'.join(experiment_metadata_gspath.split('/')[1:])
+metrics_file_name    = f'{experiment_metadata_path}/metrics.json'
+
 log_dir = os.environ['AIP_TENSORBOARD_LOG_DIR']
 
 if log_dir.strip()=='':
     log_dir = "logs"
+
+
+print(f"""
+--------------- env vars --------------------
+LOCATION           {location}
+GCLOUD_PROJECT_ID  {project_id}
+EXPERIMENT_ID      {experiment_id}
+RUN_ID             {run_id}
+JOB_ID             {job_id}
+EXPERIMENT_METADATA_BUCKET  {experiment_metadata_bucket}
+EXPERIMENT_METADATA_GSPATH  {experiment_metadata_gspath}
+
+--------------- args --------------------
+epocs                       {args.epochs}
+per_device_train_batch_size {args.per_device_train_batch_size}
+gradient_accumulation_steps {args.gradient_accumulation_steps}
+
+-------------- experiment data --------------
+metrics_file_name      {metrics_file_name}
+log dir                {log_dir}
+""")
+
+# -------------------------------------------------------
+# -------------------------------------------------------
+
+
 
 hf_token = os.environ['HF_TOKEN']
 login(hf_token)
@@ -120,9 +173,10 @@ args = SFTConfig(
     output_dir="gemma-text-to-sql",         # directory to save and repository id
     max_length=512,                         # max sequence length for model and packing of the dataset
     packing=True,                           # Groups multiple samples in the dataset into a single sequence
-    num_train_epochs=args.epochs,                     # number of training epochs
-    per_device_train_batch_size=1,          # batch size per device during training
-    gradient_accumulation_steps=4,          # number of steps before performing a backward/update pass
+    num_train_epochs=args.epochs,                                    # number of training epochs
+    per_device_train_batch_size=args.per_device_train_batch_size,    # batch size per device during training
+    gradient_accumulation_steps=args.per_device_train_batch_size,    # number of steps before performing a backward/update pass
+    max_steps = args.max_steps,
     gradient_checkpointing=True,            # use gradient checkpointing to save memory
     optim="adamw_torch_fused",              # use fused adamw optimizer
     logging_dir=log_dir,
@@ -152,5 +206,6 @@ trainer = SFTTrainer(
 )
 
 
-trainer.train()
-
+train_output = trainer.train()
+upload_blob_from_json(experiment_metadata_bucket, trian_output.metrics, metrics_file_name)
+print (f'uploaded metrics to {experiment_metadata_bucket}/{metrics_file_name}')

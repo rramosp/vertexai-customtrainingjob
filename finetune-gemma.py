@@ -207,5 +207,5 @@ trainer = SFTTrainer(
 
 
 train_output = trainer.train()
-upload_blob_from_json(experiment_metadata_bucket, trian_output.metrics, metrics_file_name)
+upload_blob_from_json(experiment_metadata_bucket, train_output.metrics, metrics_file_name)
 print (f'uploaded metrics to {experiment_metadata_bucket}/{metrics_file_name}')

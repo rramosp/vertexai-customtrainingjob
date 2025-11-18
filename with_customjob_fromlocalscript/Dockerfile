@@ -7,9 +7,6 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Installs additional packages
 RUN pip install trl bitsandbytes peft
 
-# copy script
-COPY dockerfiles/run_from_gspath.sh .
-
 # Any script will be renamed as task.py
-ENTRYPOINT ["bash", "run_from_gspath.sh"]
+ENTRYPOINT ["python", "task.py"]
 

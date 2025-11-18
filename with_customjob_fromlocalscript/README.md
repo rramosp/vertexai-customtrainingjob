@@ -7,9 +7,8 @@ This is a very abridged version of [this tutorial](https://cloud.google.com/vert
 ## Files
 
 - `Dockerfile`: container definition
-- `send_job.py`: the script that creates and sends the training job to GCP
-- `template-job.py`: a basic dummy job gather env vars, etc.
-- `finetune-gemma.py`: a job to finetunegemma
+- `finetune-gemma.py`: the training script that gets installed within the container
+- `sendjob.py`: the script that creates and sends the training job to GCP
 
 
 ## Prepare stuff 
@@ -20,8 +19,15 @@ Set default credentials:
 
 Make sure you have:
 
+- a service account (see `sendjob.py`)
+- IAM role as **Service Account User**
+
+
 Create first an artifact repository in your project. Here we use an artifact repository named`deeplearning`, whicn you can create under GCP Console $\to$ Artifact Registry (_you might look for it on the search bar_) $\to$ Create Repository. See [example here](https://cloud.google.com/artifact-registry/docs/docker/store-docker-container-images#before-you-begin).
 
+Get a token from HuggingFace and store it in the local variable `HF_TOKEN`
+
+        export HF_TOKEN='xxxxxxxx'
 
 ## build container
 
@@ -35,12 +41,10 @@ Create first an artifact repository in your project. Here we use an artifact rep
 
 ## check by running locally 
 
-        zip template-job.zip run.sh template-job.py
-        gsutil cp template-job.zip gs://mytmpbucket/scripts
-        export ZIP_WITH_RUNSCRIPT_GSPATH=gs://mytmpbucket/scripts/template-job.zip
-        docker run --rm -e ZIP_WITH_RUNSCRIPT_GSPATH=${ZIP_WITH_RUNSCRIPT_GSPATH} ${IMAGE_URI}
+        docker run --rm --gpus all -e HF_TOKEN=${HF_TOKEN} ${IMAGE_URI}
 
 ## upload image to registry
+
 
         gcloud auth configure-docker us-east4-docker.pkg.dev
         docker push ${IMAGE_URI}
@@ -49,7 +53,7 @@ And check it appears under the repository you created
 
 ## run training job
 
-    python send_job.py
+    python sendjob.py
 
 ## check progress
 

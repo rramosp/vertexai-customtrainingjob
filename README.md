@@ -7,7 +7,7 @@ This is a very abridged version of [this tutorial](https://cloud.google.com/vert
 ## Files
 
 - `Dockerfile`: container definition
-- `send_job.py`: the script that creates and sends the training job to GCP
+- `send-job.py`: the script that creates and sends the training job to GCP
 - `template-job.py`: a basic dummy job gather env vars, etc.
 - `finetune-gemma.py`: a job to finetunegemma
 
@@ -49,7 +49,7 @@ And check it appears under the repository you created
 
 ## run training job
 
-    python send_job.py
+    python send-job.py
 
 ## check progress
 

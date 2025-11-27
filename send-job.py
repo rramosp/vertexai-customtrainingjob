@@ -135,17 +135,22 @@ client = aiplatform.gapic.JobServiceClient(client_options=client_options)
 custom_job = {
     "display_name": job_id,
     "job_spec": {
-        #"baseOutputDirectory": base_output_dir,
         "worker_pool_specs": [
             {
                 "machine_spec": {
                     #"machine_type": "a3-highgpu-1g",
                     #"accelerator_type": aiplatform.gapic.AcceleratorType.NVIDIA_H100_80GB,
-                    "machine_type": "g2-standard-4",
-                    "accelerator_type": aiplatform.gapic.AcceleratorType.NVIDIA_L4,
                     #"machine_type": "n1-standard-4",
-                    #"accelerator_type": aiplatform.gapic.AcceleratorType.TESLA_T4,
-                    "accelerator_count": 1,
+                    #"accelerator_type": aiplatform.gapic.AcceleratorType.NVIDIA_TESLA_T4,
+                    # "accelerator_count": 1,
+                    # machine type, accelerator_type and accelerator_count must match the ones
+                    # in the reservation
+                    "machine_type": "n1-standard-4",
+                    "reservationAffinity": {
+                      "reservationAffinityType": "SPECIFIC_RESERVATION",
+                      "key": "compute.googleapis.com/reservation-name",
+                      "values": "projects/mlplabs/zones/us-east4-a/reservations/test-reservation-20251127-191856"
+                    },
                 },
                 "replica_count": 1,
                 "container_spec": {
@@ -165,11 +170,11 @@ custom_job = {
                 },
             }
         ],
-        "scheduling": {
-            "timeout": timedelta(seconds=60),
-            "max_wait_duration": timedelta(seconds=1200),
-            "strategy": "FLEX_START"
-        },  
+        #"scheduling": {
+        #    "timeout": timedelta(seconds=60),
+        #    "max_wait_duration": timedelta(seconds=1200),
+        #    "strategy": "FLEX_START"
+        #},  
     },
 }
 parent = f"projects/{project_id}/locations/{location}"

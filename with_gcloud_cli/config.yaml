@@ -1,0 +1,14 @@
+workerPoolSpecs:
+    machineSpec:
+      machineType: n2-standard-4
+      reservationAffinity:
+        reservationAffinityType: SPECIFIC_RESERVATION
+        key: compute.googleapis.com/reservation-name
+        values: projects/genai-dev-454121/zones/us-east4-a/reservations/xx02-reservation-20251127-210211
+    replicaCount: 1
+    containerSpec:
+      imageUri: gcr.io/ucaip-test/ucaip-training-test
+      args:
+         - port=8500
+      command:
+         start

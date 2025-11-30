@@ -60,3 +60,13 @@ if 'experiment_metadata_gspath' in os.environ.keys():
    print('uploaded metrics to bucket')
 else:
    print ('no destination in GCP Storage for metadata')
+
+from time import sleep, time
+
+max_steps = 100
+t0 = time()
+for i in range(1, max_steps+1):
+   elapsed = time()-t0
+   print (f'waiting {i}/{max_steps} .... elapsed {elapsed:.2f}')
+   sleep(5)
+

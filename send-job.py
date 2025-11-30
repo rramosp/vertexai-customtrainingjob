@@ -62,6 +62,7 @@ def upload_current_dir_as_zip(bucket_name, destination_blob_name):
 
 # ---------------------------------------
 # ------------- setup vars --------------
+use_reservation = False
 
 location = 'us-east1'
 project_id = 'genai-dev-454121'
@@ -110,6 +111,7 @@ EXPERIMENT_METADATA_GSPATH  {experiment_metadata_gspath}
 
 CONTAINER          {container_image_uri}
 API_ENDPOINT       {api_endpoint}
+CONSUMPTION MODEL  {'reservation' if use_reservation else 'DWS FLEX'}
 ------------------------------------------
 """)
 # ---- done setup vars ----
@@ -127,56 +129,93 @@ print (f'uploading source content to gs://  {experiment_bucket}  /  {experiment_
 upload_current_dir_as_zip(experiment_bucket, f'{experiment_path}/src.zip')
 
 
-# The AI Platform services require regional API endpoints.
+
+# ---- build customjob request for vertex ai ----
+
 client_options = {"api_endpoint": api_endpoint}
 
 client = aiplatform.gapic.JobServiceClient(client_options=client_options)
 
-custom_job = {
-    "display_name": job_id,
-    "job_spec": {
-        "worker_pool_specs": [
-            {
-                "machine_spec": {
-                    #"machine_type": "a3-highgpu-1g",
-                    #"accelerator_type": aiplatform.gapic.AcceleratorType.NVIDIA_H100_80GB,
-                    #"machine_type": "n1-standard-4",
-                    #"accelerator_type": aiplatform.gapic.AcceleratorType.NVIDIA_TESLA_T4,
-                    # "accelerator_count": 1,
-                    # machine type, accelerator_type and accelerator_count must match the ones
-                    # in the reservation
-                    "machine_type": "n1-standard-4",
-                    "reservationAffinity": {
-                      "reservationAffinityType": "SPECIFIC_RESERVATION",
-                      "key": "compute.googleapis.com/reservation-name",
-                      "values": "projects/mlplabs/zones/us-east4-a/reservations/test-reservation-20251127-191856"
-                    },
-                },
-                "replica_count": 1,
-                "container_spec": {
-                    "image_uri": container_image_uri,
-                    "command": [],
-                    "args": [],
-                    "env": [{'name': 'ZIP_WITH_RUNSCRIPT_GSPATH', 'value': experiment_src_gspath},
-                            {'name': 'GCLOUD_PROJECT_ID', 'value': project_id},
-                            {'name': 'LOCATION', 'value': location},
-                            {'name': 'JOB_ID', 'value': job_id},
-                            {'name': 'RUN_ID', 'value': run_id},
-                            {'name': 'EXPERIMENT_ID', 'value': experiment_id},
-                            {'name': 'EXPERIMENT_METADATA_GSPATH', 'value': experiment_metadata_gspath},
-                            {'name': 'HF_TOKEN', 'value': hf_token},
-                            {'name': 'BASE_OUTPUT_DIR', 'value': base_output_dir}
-                             ]
-                },
-            }
-        ],
-        #"scheduling": {
-        #    "timeout": timedelta(seconds=60),
-        #    "max_wait_duration": timedelta(seconds=1200),
-        #    "strategy": "FLEX_START"
-        #},  
-    },
-}
-parent = f"projects/{project_id}/locations/{location}"
-response = client.create_custom_job(parent=parent, custom_job=custom_job)
-print("response:", response)
+
+import google.cloud.aiplatform_v1.types as aip_types
+from google.cloud.aiplatform_v1.services.job_service.client import JobServiceClient
+import google
+
+if use_reservation:
+    reservation_affinity = aip_types.ReservationAffinity(
+        reservation_affinity_type = aip_types.ReservationAffinity.Type.SPECIFIC_RESERVATION,
+        key='compute.googleapis.com/reservation-name',
+        values=['projects/genai-dev-454121/zones/us-east4-a/reservations/xx02-reservation-20251127-210211'],
+    )
+    machine_spec = aip_types.MachineSpec(
+        machine_type="n2-standard-4",
+        reservation_affinity=reservation_affinity,
+    )
+else:
+    machine_spec = aip_types.MachineSpec(
+        machine_type="n2-standard-4",
+    )
+
+
+worker_spec = aip_types.WorkerPoolSpec(
+    machine_spec=machine_spec,
+    replica_count=1,
+    container_spec=aip_types.ContainerSpec(
+        image_uri=container_image_uri,
+        env =  [
+                {'name': 'ZIP_WITH_RUNSCRIPT_GSPATH', 'value': experiment_src_gspath},
+                {'name': 'GCLOUD_PROJECT_ID', 'value': project_id},
+                {'name': 'LOCATION', 'value': location},
+                {'name': 'JOB_ID', 'value': job_id},
+                {'name': 'RUN_ID', 'value': run_id},
+                {'name': 'EXPERIMENT_ID', 'value': experiment_id},
+                {'name': 'EXPERIMENT_METADATA_GSPATH', 'value': experiment_metadata_gspath},
+                {'name': 'HF_TOKEN', 'value': hf_token},
+                {'name': 'BASE_OUTPUT_DIR', 'value': base_output_dir}
+                ]
+        
+    ),
+)
+
+if use_reservation:
+    custom_job_spec = aip_types.CustomJobSpec(
+        worker_pool_specs=[worker_spec],
+        # Add other specs like service_account, base_output_directory if needed
+    )
+else:
+
+    scheduling = aip_types.Scheduling(
+        timeout = google.protobuf.duration_pb2.Duration(seconds=24 * 60 * 5), # 5 mins
+        strategy = google.cloud.aiplatform_v1.types.Scheduling.Strategy.FLEX_START,
+        max_wait_duration = google.protobuf.duration_pb2.Duration(seconds=24 * 60 * 60) # one hour
+    )    
+    custom_job_spec = aip_types.CustomJobSpec(
+        worker_pool_specs=[worker_spec],
+        scheduling = scheduling
+        # Add other specs like service_account, base_output_directory if needed
+    )
+
+# --- Create the CustomJob resource object ---
+custom_job = aip_types.CustomJob(
+    display_name=job_id,
+    job_spec=custom_job_spec,
+)
+
+LOCATION = 'us-east4'
+PROJECT_ID = project_id
+
+# --- Instantiate the JobServiceClient and create the job ---
+client_options = {"api_endpoint": f"{LOCATION}-aiplatform.googleapis.com"}
+job_service_client = JobServiceClient(client_options=client_options)
+
+parent = f"projects/{PROJECT_ID}/locations/{LOCATION}"
+request = aip_types.CreateCustomJobRequest(
+    parent=parent,
+    custom_job=custom_job,
+)
+
+try:
+    response = job_service_client.create_custom_job(request)
+    print(f"Created Custom Job: {response.name}")
+except Exception as e:
+    print(f"An error occurred: {e}")

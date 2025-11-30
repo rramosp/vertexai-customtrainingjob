@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ -v ZIP_WITH_RUNSCRIPT_GSPATH ]]; then
-  gspath = $ZIP_WITH_RUNSCRIPT_GSPATH
+  export gspath=$ZIP_WITH_RUNSCRIPT_GSPATH
   echo "--- copying zip from $ZIP_WITH_RUNSCRIPT_GSPATH"
   gsutil cp $ZIP_WITH_RUNSCRIPT_GSPATH zip_with_runscript.zip
   echo "--- unzipping"

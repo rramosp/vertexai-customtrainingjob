@@ -1,10 +1,10 @@
-from google.cloud import aiplatform
+from google.cloud import aiplatform, storage
+import google.cloud.aiplatform_v1.types as aip_types
+from google.cloud.aiplatform_v1.services.job_service.client import JobServiceClient
+import google
+
 from datetime import datetime
-from datetime import timedelta
 import os
-
-
-from google.cloud import storage
 from zipfile import ZipFile, ZipInfo
 import io
 import pathlib
@@ -62,14 +62,17 @@ def upload_current_dir_as_zip(bucket_name, destination_blob_name):
 
 # ---------------------------------------
 # ------------- setup vars --------------
+
+LOCATION   = 'us-east4'
+PROJECT_ID = 'genai-dev-454121'
+
+# if true it will use the reservation name below, otherwise it will resort to DWS
 use_reservation = False
 
-location = 'us-east1'
-project_id = 'genai-dev-454121'
+RESERVATION_NAME = 'projects/genai-dev-454121/zones/us-east4-a/reservations/xx02-reservation-20251127-210211'
 
-container_image_uri = f'{location}-docker.pkg.dev/genai-dev-454121/deeplearning-us-east1/hftrain:v0'
-api_endpoint        = f"{location}-aiplatform.googleapis.com"
-api_endpoint        = f"us-central1-aiplatform.googleapis.com"
+container_image_uri = f'{LOCATION}-docker.pkg.dev/genai-dev-454121/deeplearning-us-east1/hftrain:v0'
+api_endpoint        = f"{LOCATION}-aiplatform.googleapis.com"
 
 # next two vars must start with 'gs://'
 base_output_dir     = 'gs://genai-dev-tmp-useast4'
@@ -83,7 +86,7 @@ timestamp = f'{now.year}{now.month:02d}{now.day:02d}-{now.hour:02d}{now.minute:0
 experiment_id = f'experiment-{timestamp}'
 run_id = f"run-{timestamp}"
 job_id = f"job-{timestamp}"
-experiment_metadata_gspath = f'{experiments_metadata_gspath}/{location}--{experiment_id}--{run_id}'
+experiment_metadata_gspath = f'{experiments_metadata_gspath}/{LOCATION}--{experiment_id}--{run_id}'
 
 if not base_output_dir.startswith('gs://'):
     raise ValueError('base_output_dir must start with gs://')
@@ -101,8 +104,8 @@ else:
 print(f"""
 
 --------------- setup --------------------
-LOCATION           {location}
-GCLOUD_PROJECT_ID  {project_id}
+LOCATION           {LOCATION}
+GCLOUD_PROJECT_ID  {PROJECT_ID}
 JOB_ID             {job_id}
 EXPERIMENT_ID      {experiment_id}
 RUN_ID             {run_id}
@@ -136,16 +139,11 @@ client_options = {"api_endpoint": api_endpoint}
 
 client = aiplatform.gapic.JobServiceClient(client_options=client_options)
 
-
-import google.cloud.aiplatform_v1.types as aip_types
-from google.cloud.aiplatform_v1.services.job_service.client import JobServiceClient
-import google
-
 if use_reservation:
     reservation_affinity = aip_types.ReservationAffinity(
         reservation_affinity_type = aip_types.ReservationAffinity.Type.SPECIFIC_RESERVATION,
         key='compute.googleapis.com/reservation-name',
-        values=['projects/genai-dev-454121/zones/us-east4-a/reservations/xx02-reservation-20251127-210211'],
+        values=[RESERVATION_NAME],
     )
     machine_spec = aip_types.MachineSpec(
         machine_type="n2-standard-4",
@@ -164,8 +162,8 @@ worker_spec = aip_types.WorkerPoolSpec(
         image_uri=container_image_uri,
         env =  [
                 {'name': 'ZIP_WITH_RUNSCRIPT_GSPATH', 'value': experiment_src_gspath},
-                {'name': 'GCLOUD_PROJECT_ID', 'value': project_id},
-                {'name': 'LOCATION', 'value': location},
+                {'name': 'GCLOUD_PROJECT_ID', 'value': PROJECT_ID},
+                {'name': 'LOCATION', 'value': LOCATION},
                 {'name': 'JOB_ID', 'value': job_id},
                 {'name': 'RUN_ID', 'value': run_id},
                 {'name': 'EXPERIMENT_ID', 'value': experiment_id},
@@ -200,9 +198,6 @@ custom_job = aip_types.CustomJob(
     display_name=job_id,
     job_spec=custom_job_spec,
 )
-
-LOCATION = 'us-east4'
-PROJECT_ID = project_id
 
 # --- Instantiate the JobServiceClient and create the job ---
 client_options = {"api_endpoint": f"{LOCATION}-aiplatform.googleapis.com"}

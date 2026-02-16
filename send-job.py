@@ -63,7 +63,7 @@ def upload_current_dir_as_zip(bucket_name, destination_blob_name):
 # ---------------------------------------
 # ------------- setup vars --------------
 
-LOCATION   = 'us-east4'
+LOCATION   = 'us-east1'
 PROJECT_ID = 'genai-dev-454121'
 
 # if true it will use the reservation name below, otherwise it will resort to DWS
@@ -139,6 +139,10 @@ client_options = {"api_endpoint": api_endpoint}
 
 client = aiplatform.gapic.JobServiceClient(client_options=client_options)
 
+machine_type = "g2-standard-4"
+accelerator_count = 1
+accelerator_type = "NVIDIA_L4"
+
 if use_reservation:
     reservation_affinity = aip_types.ReservationAffinity(
         reservation_affinity_type = aip_types.ReservationAffinity.Type.SPECIFIC_RESERVATION,
@@ -146,12 +150,16 @@ if use_reservation:
         values=[RESERVATION_NAME],
     )
     machine_spec = aip_types.MachineSpec(
-        machine_type="n2-standard-4",
+        machine_type=machine_type,
+        accelerator_count=accelerator_count,
+        accelerator_type=accelerator_type,
         reservation_affinity=reservation_affinity,
     )
 else:
     machine_spec = aip_types.MachineSpec(
-        machine_type="n2-standard-4",
+        machine_type=machine_type,
+        accelerator_count=accelerator_count,
+        accelerator_type=accelerator_type,
     )
 
 
